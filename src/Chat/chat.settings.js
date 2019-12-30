@@ -1,0 +1,5 @@
+export const chatSettings = {
+    DEFAULT_ROW_HEIGHT: 50,
+    FLOATING_DATE_ROW_DATE_OFFSET: 50,
+    FLOATING_DATE_MAX_OFFSET_FROM_TOP_BAR: 0,
+};

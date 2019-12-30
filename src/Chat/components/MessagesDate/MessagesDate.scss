@@ -1,0 +1,11 @@
+.messages-date {
+    text-align: center;
+    height: 22px;
+
+    &__text {
+        padding: 5px;
+        border-radius: 10px;
+        background-color: cornflowerblue;
+        font-size: 12px;
+    }
+}

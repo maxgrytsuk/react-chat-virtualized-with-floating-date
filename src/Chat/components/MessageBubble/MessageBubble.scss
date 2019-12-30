@@ -1,0 +1,48 @@
+.message-bubble {
+    padding: 9px 16px;
+    display: flex;
+    flex-direction: column;
+    flex-basis: auto;
+    z-index: 0;
+
+    &--out {
+        align-self: flex-end;
+    }
+
+    &__content {
+        font-size: 12px;
+        border-radius: 16px;
+        padding: 12px 16px;
+        max-width: 60%;
+
+        &--in {
+            background: lightgray;
+            color: black;
+            align-self: flex-start;
+        }
+
+        &--out {
+            background: cadetblue;
+            color: white;
+            align-self: flex-end;
+        }
+
+    }
+
+    &__time {
+        font-size: 12px;
+        font-weight: 400;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: grey;
+        padding: 5px 0;
+
+        &--in {
+            align-self: flex-start;
+        }
+
+        &--out {
+            align-self: flex-end;
+        }
+    }
+}

@@ -1,0 +1,28 @@
+.chat {
+
+    &--hidden {
+        visibility: hidden !important;
+    }
+
+    &__wrapper {
+        flex: 1 1 auto;
+    }
+
+    &__list {
+        outline: none;
+    }
+
+    &__row {
+        padding: 10px 0;
+
+        &--hidden {
+            visibility: hidden;
+        }
+    }
+
+    &__floating-date {
+        position: absolute;
+        width: 100%;
+        z-index: 1;
+    }
+}

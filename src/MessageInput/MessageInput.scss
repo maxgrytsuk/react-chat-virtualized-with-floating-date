@@ -1,0 +1,25 @@
+.message-input {
+    display: inline-flex;
+    align-items: flex-end;
+    z-index: 1;
+    border-top: solid 1px grey;
+    padding: 5px 10px;
+    background-color: white;
+
+    &__text {
+        box-sizing: border-box;
+        overflow: hidden;
+        width: 100%;
+        outline: none;
+        border: none;
+        resize: none;
+        margin: auto;
+        background-color: white;
+        color: black;
+        font-size: 12px;
+        line-height: 118%;
+        text-align: justify;
+        padding-right: 20px;
+        padding-left: 16px;
+    }
+}
