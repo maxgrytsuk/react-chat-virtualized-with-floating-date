@@ -149,7 +149,8 @@ class Chat extends PureComponent {
         const rowsHeight = this.state.renderedRows.reduce((acc, item) => acc + item.height, 0);
         this.setState({rowsHeight});
 
-        if (rowsHeight !== this.state.rowsHeight) {
+        /** Scroll to bottom on initial loading */
+        if (this.state.isFrameHidden && rowsHeight !== this.state.rowsHeight) {
             this.setState({scrollTop: rowsHeight});
         }
 
