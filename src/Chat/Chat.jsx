@@ -64,7 +64,9 @@ class Chat extends PureComponent {
         if (messagesCountDiff < 0) {
             const newRows = this.getNewRows(messagesCountDiff);
             rows = [...this.state.rows, ...newRows];
-            this.setState({rows});
+            this.setState({rows}, () => {
+                setTimeout(() => this.scrollToBottom())
+            });
         } else {
             rows = getRows(this.props.messages);
             this.setState({rows, renderedRows: [], rowsHeight: 0, isFrameHidden: true});
