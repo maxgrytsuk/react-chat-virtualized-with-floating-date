@@ -161,8 +161,11 @@ class Chat extends PureComponent {
             this.setState({floatingDateMaxOffsetFromWindowTop});
         }
 
-        /** Wait for rows to be rendered using timeout (no way to determine that rendering phase has finished) */
-        setTimeout(() => this.setState({isFrameHidden: false}), this.state.rows.length * 3);
+        const r = this.state.renderedRows[this.state.renderedRows.length - 1];
+        if (r.row.index === this.state.rows.length - 1) {
+            this.setState({isFrameHidden: false});
+        }
+
     };
 
     setRowRef = ({index, style, row}) => (ref) => {
@@ -205,21 +208,40 @@ class Chat extends PureComponent {
         );
     };
 
-    renderList = ({height, width, top}) => {
-        return (
-            <List
-                className={'chat__list'}
-                ref={this.list}
-                height={height}
-                rowCount={this.state.rows.length}
-                rowHeight={this.cellMeasurerCache.rowHeight}
-                rowRenderer={this.rowRenderer}
-                onRowsRendered={this.onRowsRendered}
-                width={width}
-                style={{top: `${top}px`, overflowX: 'visible', overflowY: 'visible'}}
-            />
-        );
-    };
+    renderList = ({height, width, top}) => (
+        <List
+            className={'chat__list'}
+            ref={this.list}
+            height={height}
+            rowCount={this.state.rows.length}
+            rowHeight={this.cellMeasurerCache.rowHeight}
+            rowRenderer={this.rowRenderer}
+            onRowsRendered={this.onRowsRendered}
+            width={width}
+            style={{top: `${top}px`, overflowX: 'visible', overflowY: 'visible'}}
+        />
+    );
+
+    renderListWithScrollbar = ({height, width, top}) => (
+        <>
+            <div
+                className={'chat__floating-date'}
+                ref={this.setFloatingDateRef}
+            >
+                {this.state.floatingDate && <MessagesDate date={this.state.floatingDate.value}/>}
+            </div>
+            <Scrollbar
+                style={{height, width}}
+                createContext={true}
+                noScrollX={true}
+                onScroll={this.onScroll}
+                ref={this.setScrollbarRef}
+                scrollTop={this.state.scrollTop}
+            >
+                {this.renderList({height, width, top})}
+            </Scrollbar>
+        </>
+    );
 
     render() {
         return this.state.rows.length ? (
@@ -236,24 +258,7 @@ class Chat extends PureComponent {
                         return top > 0 ? (
                             this.renderList({height, width, top})
                         ) : (
-                            <>
-                                {top === 0 && <div
-                                    className={'chat__floating-date'}
-                                    ref={this.setFloatingDateRef}
-                                >
-                                    {this.state.floatingDate && <MessagesDate date={this.state.floatingDate.value}/>}
-                                </div>}
-                                <Scrollbar
-                                    style={{height, width}}
-                                    createContext={true}
-                                    noScrollX={true}
-                                    onScroll={this.onScroll}
-                                    ref={this.setScrollbarRef}
-                                    scrollTop={this.state.scrollTop}
-                                >
-                                    {this.renderList({height, width, top})}
-                                </Scrollbar>
-                            </>
+                            this.renderListWithScrollbar({height, width, top})
                         );
                     }}
                 </AutoSizer>

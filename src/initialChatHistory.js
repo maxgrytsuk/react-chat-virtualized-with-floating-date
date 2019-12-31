@@ -79,7 +79,7 @@ const SENTENCES = [
     'Phasellus blandit arcu non diam varius ornare.',
 ];
 
-const MESSAGES_COUNT = 50;
+const MESSAGES_COUNT = 100;
 const now = Date.now();
 const day = 24 * 60 * 60 * 1000;
 
