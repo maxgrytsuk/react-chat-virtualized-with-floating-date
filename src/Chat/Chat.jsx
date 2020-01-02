@@ -8,7 +8,7 @@ import {chatSettings} from './chat.settings';
 import {
     getFloatingDate,
     getFloatingDatePosition,
-    getMessagesSectionDate, getNewRowsWithDateFromPrevChunk,
+    getNewRowsWithDateFromPrevChunk,
     getRenderedRowsWithRecalculatedPositions,
     getRows,
 } from './chat.helper';
@@ -51,7 +51,6 @@ class Chat extends PureComponent {
     }
 
     componentDidUpdate(prevProps) {
-        // console.log('this.props.newMessages', this.props.newMessages);
         if (prevProps.newMessages !== this.props.newMessages) {
             this.init(this.props.newMessages);
             if (this.props.newMessages.page) {
@@ -92,7 +91,6 @@ class Chat extends PureComponent {
             this.setState({rows, renderedRows: [], rowsHeight: 0, isFrameHidden: true});
             this.renderedRowsTmp = [];
         }
-        console.log('rows', rows);
     };
 
     getNewRows = (newMessages) => {
@@ -108,7 +106,7 @@ class Chat extends PureComponent {
         if (this.state.page === undefined) {
             this.setState({page: 0});
         } else {
-            this.props.onScrollTop(this.state.page);
+            this.props.onLoadMore(this.state.page);
         }
     };
 
@@ -117,9 +115,6 @@ class Chat extends PureComponent {
     }
 
     onScroll = (scrollValues) => {
-        // if (scrollValues.scrollTop === 0) {
-        //     this.props.onScrollTop(this.state.page);
-        // }
         const {scrollTop, scrollLeft} = scrollValues;
         this.setState({scrollTop});
         const {Grid: grid} = this.list;

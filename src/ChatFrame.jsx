@@ -6,7 +6,7 @@ import './ChatFrame.scss';
 import {initialChatHistory} from './initialChatHistory';
 import {MessageDirection} from './Chat/chat.enum';
 
-export const MESSAGES_PER_PAGE = 50;
+export const MESSAGES_PER_PAGE = 30;
 
 class ChatFrame extends PureComponent {
 
@@ -22,7 +22,6 @@ class ChatFrame extends PureComponent {
 
     componentDidUpdate(prevProps, prevState, snapshot) {
         if (prevState.page !== this.state.page) {
-            console.log('this.state.page', this.state.page);
             const start = this.state.page * MESSAGES_PER_PAGE;
             const items = initialChatHistory.slice(start, start + MESSAGES_PER_PAGE);
             this.setState({newMessages: {items, page: this.state.page}});
@@ -46,7 +45,7 @@ class ChatFrame extends PureComponent {
         this.setState({draftMessage});
     };
 
-    onScrollTop = (page) => {
+    onLoadMore = (page) => {
         page = page + 1;
         this.setState({page});
     };
@@ -57,7 +56,7 @@ class ChatFrame extends PureComponent {
                 Header
             </header>
             <Chat chatHistory={this.state.chatHistory} newMessages={this.state.newMessages}
-                  draftMessage={this.state.draftMessage} onScrollTop={this.onScrollTop}/>
+                  draftMessage={this.state.draftMessage} onLoadMore={this.onLoadMore}/>
             <MessageInput onSendMessage={this.onSendMessage} onChangeMessage={this.onMessageChange}/>
         </Div100vh>
     );
