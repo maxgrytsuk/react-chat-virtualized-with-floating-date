@@ -1,5 +1,5 @@
 import React, {PureComponent} from 'react';
-import {AutoSizer, CellMeasurer, CellMeasurerCache, List} from 'react-virtualized';
+import {AutoSizer, CellMeasurer, CellMeasurerCache, InfiniteLoader, List} from 'react-virtualized';
 import Scrollbar from 'react-scrollbars-custom';
 import cx from 'classnames';
 import './Chat.scss';
@@ -8,6 +8,7 @@ import {chatSettings} from './chat.settings';
 import {
     getFloatingDate,
     getFloatingDatePosition,
+    getMessagesSectionDate, getNewRowsWithDateFromPrevChunk,
     getRenderedRowsWithRecalculatedPositions,
     getRows,
 } from './chat.helper';
@@ -20,6 +21,7 @@ class Chat extends PureComponent {
         rows: [],
         renderedRows: [],
         rowsHeight: 0,
+        page: undefined,
         scrollTop: undefined,
         isFrameHidden: true,
         floatingDate: null,
@@ -49,33 +51,51 @@ class Chat extends PureComponent {
     }
 
     componentDidUpdate(prevProps) {
-        const messagesCountDiff = prevProps.messages.length - this.props.messages.length;
-        if (messagesCountDiff) {
-            this.init(messagesCountDiff);
+        // console.log('this.props.newMessages', this.props.newMessages);
+        if (prevProps.newMessages !== this.props.newMessages) {
+            this.init(this.props.newMessages);
+            if (this.props.newMessages.page) {
+                this.setState({page: this.props.newMessages.page});
+            } else {
+                setTimeout(() => this.scrollToBottom());
+            }
         }
 
-        if (prevProps.message !== this.props.message) {
+        if (prevProps.draftMessage !== this.props.draftMessage) {
             this.scrollToBottom();
         }
     }
 
-    init = (messagesCountDiff) => {
+    init = (newMessages) => {
         let rows;
-        if (messagesCountDiff < 0) {
-            const newRows = this.getNewRows(messagesCountDiff);
-            rows = [...this.state.rows, ...newRows];
+        if (newMessages) {
+            let newRows = this.getNewRows(newMessages.items);
+            if (newMessages.page) {
+                const dateRow = this.state.rows[0];
+                const newRowsWithDateFromPrevChunk = getNewRowsWithDateFromPrevChunk({dateRow, newRows});
+                const renderedRows = newRows.length !== newRowsWithDateFromPrevChunk.length ? this.state.rows.slice(1, this.state.rows.length) : this.state.rows;
+                const renderedRowsWithRecalculatedIndexes = renderedRows.map((r, i) => {
+                    r.index = i + newRowsWithDateFromPrevChunk.length;
+                    return r;
+                });
+                rows = [...newRowsWithDateFromPrevChunk, ...renderedRowsWithRecalculatedIndexes];
+            } else {
+                rows = [...this.state.rows, ...newRows];
+            }
             this.setState({rows}, () => {
-                setTimeout(() => this.scrollToBottom())
+                setTimeout(() => {
+                    this.scrollToBottom();
+                })
             });
         } else {
-            rows = getRows(this.props.messages);
+            rows = getRows(this.props.chatHistory);
             this.setState({rows, renderedRows: [], rowsHeight: 0, isFrameHidden: true});
             this.renderedRowsTmp = [];
         }
+        console.log('rows', rows);
     };
 
-    getNewRows = (messagesCountDiff) => {
-        const newMessages = this.props.messages.slice(messagesCountDiff);
+    getNewRows = (newMessages) => {
         const dates = this.state.rows.filter(item => item.type === RowType.DATE).map(v => v.content);
         return getRows(newMessages, this.state.rows.length, dates);
     };
@@ -84,10 +104,25 @@ class Chat extends PureComponent {
         this.scrollBar && this.scrollBar.scrollToBottom();
     };
 
+    loadMoreRows = () => {
+        if (this.state.page === undefined) {
+            this.setState({page: 0});
+        } else {
+            this.props.onScrollTop(this.state.page);
+        }
+    };
+
+    isRowLoaded({index}) {
+        return index > 0;
+    }
+
     onScroll = (scrollValues) => {
+        // if (scrollValues.scrollTop === 0) {
+        //     this.props.onScrollTop(this.state.page);
+        // }
         const {scrollTop, scrollLeft} = scrollValues;
         this.setState({scrollTop});
-        const {Grid: grid} = this.list.current;
+        const {Grid: grid} = this.list;
 
         this.updateFloatingDate();
 
@@ -134,13 +169,14 @@ class Chat extends PureComponent {
         this.floatingDateRef = ref;
     };
 
-    onRowsRendered = () => {
+    onRowsRendered = (onRowsRendered) => ({startIndex, stopIndex}) => {
         this.setState(
             {
                 renderedRows: this.renderedRowsTmp,
             },
             this.onAfterSetRenderedRowsToState,
         );
+        onRowsRendered && onRowsRendered({startIndex, stopIndex});
     };
 
     onAfterSetRenderedRowsToState = () => {
@@ -165,7 +201,9 @@ class Chat extends PureComponent {
 
         const r = this.state.renderedRows[this.state.renderedRows.length - 1];
         if (r.row.index === this.state.rows.length - 1) {
-            this.setState({isFrameHidden: false});
+            setTimeout(() => {
+                this.setState({isFrameHidden: false});
+            }, 100);
         }
 
     };
@@ -188,6 +226,7 @@ class Chat extends PureComponent {
     };
 
     rowRenderer = ({index, key, style, parent}) => {
+        // index= this.state.rows.length - 1;
         const row = this.state.rows.find(item => item.index === index);
         return (
             <CellMeasurer cache={this.cellMeasurerCache} columnIndex={0} key={key} parent={parent} rowIndex={index}>
@@ -210,50 +249,63 @@ class Chat extends PureComponent {
         );
     };
 
-    renderList = ({height, width, top}) => (
-        <List
-            className={'chat__list'}
-            ref={this.list}
-            height={height}
-            rowCount={this.state.rows.length}
-            rowHeight={this.cellMeasurerCache.rowHeight}
-            rowRenderer={this.rowRenderer}
-            onRowsRendered={this.onRowsRendered}
-            width={width}
-            style={{top: `${top}px`, overflowX: 'visible', overflowY: 'visible'}}
-        />
-    );
+    setListRef = (registerChild) => (ref) => {
+        registerChild && registerChild(ref);
+        this.list = ref;
+    };
+
+    renderList = ({height, width, top, onRowsRendered, registerChild}) => {
+        return (
+            <List
+                className={'chat__list'}
+                ref={this.setListRef(registerChild)}
+                onRowsRendered={this.onRowsRendered(onRowsRendered)}
+                height={height}
+                rowCount={this.state.rows.length}
+                rowHeight={this.cellMeasurerCache.rowHeight}
+                rowRenderer={this.rowRenderer}
+                width={width}
+                style={{top: `${top}px`, overflowX: 'visible', overflowY: 'visible'}}
+            />
+        );
+    };
 
     renderListWithScrollbar = ({height, width, top}) => (
-        <>
-            <div
-                className={'chat__floating-date'}
-                ref={this.setFloatingDateRef}
-            >
-                {this.state.floatingDate && <MessagesDate date={this.state.floatingDate.value}/>}
-            </div>
-            <Scrollbar
-                style={{height, width}}
-                createContext={true}
-                noScrollX={true}
-                onScroll={this.onScroll}
-                ref={this.setScrollbarRef}
-                scrollTop={this.state.scrollTop}
-            >
-                {this.renderList({height, width, top})}
-            </Scrollbar>
-        </>
+        <InfiniteLoader
+            isRowLoaded={this.isRowLoaded}
+            loadMoreRows={this.loadMoreRows}
+            rowCount={this.state.rows.length}
+            threshold={1}
+        >
+            {({onRowsRendered, registerChild}) => {
+                return (
+                    <>
+                        <div
+                            className={'chat__floating-date'}
+                            ref={this.setFloatingDateRef}
+                        >
+                            {this.state.floatingDate && <MessagesDate date={this.state.floatingDate.value}/>}
+                        </div>
+                        <Scrollbar
+                            style={{height, width}}
+                            createContext={true}
+                            noScrollX={true}
+                            onScroll={this.onScroll}
+                            ref={this.setScrollbarRef}
+                            scrollTop={this.state.scrollTop}
+                        >
+                            {this.renderList({height, width, top, onRowsRendered, registerChild})}
+                        </Scrollbar>
+                    </>
+                )
+            }}
+        </InfiniteLoader>
     );
 
     render() {
         return this.state.rows.length ? (
             <div className="chat__wrapper">
-                <AutoSizer
-                    className={cx(
-                        'chat',
-                        {'chat--hidden': this.state.isFrameHidden},
-                    )}
-                >
+                <AutoSizer className={cx('chat', {'chat--hidden': this.state.isFrameHidden})}>
                     {({height, width}) => {
                         const messagesOffsetTop = height - this.state.rowsHeight;
                         const top = messagesOffsetTop > 0 ? messagesOffsetTop : 0;
