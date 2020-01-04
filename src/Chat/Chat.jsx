@@ -1,5 +1,5 @@
 import React, {PureComponent} from 'react';
-import {AutoSizer, CellMeasurer, CellMeasurerCache, InfiniteLoader, List} from 'react-virtualized';
+import {AutoSizer, CellMeasurer, /*CellMeasurerCache,*/ InfiniteLoader, List} from 'react-virtualized';
 import Scrollbar from 'react-scrollbars-custom';
 import cx from 'classnames';
 import './Chat.scss';
@@ -12,6 +12,7 @@ import {
     getRenderedRowsWithRecalculatedPositions,
     getRows,
 } from './chat.helper';
+import IdCellSizeCache from './IdCellSizeCache'
 import MessageBubble from './components/MessageBubble';
 import MessagesDate from './components/MessagesDate';
 
@@ -33,10 +34,11 @@ class Chat extends PureComponent {
     list = React.createRef();
 
     /** CellMeasurer component cache */
-    cellMeasurerCache = new CellMeasurerCache({
-        defaultHeight: chatSettings.DEFAULT_ROW_HEIGHT,
-        fixedWidth: true,
-    });
+    cellMeasurerCache;
+    // cellMeasurerCache = new CellMeasurerCache({
+    //     defaultHeight: chatSettings.DEFAULT_ROW_HEIGHT,
+    //     fixedWidth: true,
+    // });
 
     /** Custom scrollbar component ref */
     scrollBar;
@@ -45,6 +47,12 @@ class Chat extends PureComponent {
     floatingDateRef;
 
     renderedRowsTmp = [];
+
+    constructor(props) {
+        super(props);
+        const { chatHistory, idLookupFunction } = props;
+        this.cellMeasurerCache = new IdCellSizeCache(chatHistory, idLookupFunction);
+    }
 
     componentDidMount() {
         this.init();

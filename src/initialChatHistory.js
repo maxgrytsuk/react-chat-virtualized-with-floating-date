@@ -1,4 +1,5 @@
 import {MessageDirection} from './Chat/chat.enum';
+import {List} from 'immutable';
 
 const SENTENCES = [
     'Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
@@ -83,7 +84,11 @@ const MESSAGES_COUNT = 10000;
 const now = Date.now();
 const day = 24 * 60 * 60 * 1000;
 
-export const initialChatHistory = [];
+const initialChatHistoryArr = [];
+
+const generateUniqueId = function () {
+    return '_' + Math.random().toString(36).substr(2, 9);
+};
 
 const getRandomNumber = (i) => Math.floor(Math.random() * i);
 
@@ -95,10 +100,13 @@ for (let i = 0; i < MESSAGES_COUNT; i++) {
         texts.push(SENTENCES[getRandomNumber(SENTENCES.length)]);
     }
 
-    initialChatHistory.push({
+    initialChatHistoryArr.push({
+        id: generateUniqueId(),
         text: texts.join(' '),
         direction: Math.random() > 0.5 ? MessageDirection.IN : MessageDirection.OUT,
-        timestamp: now - getRandomNumber(MESSAGES_COUNT/10) * day,
+        timestamp: now - getRandomNumber(MESSAGES_COUNT / 10) * day,
 
     });
 }
+
+export const initialChatHistory = List(initialChatHistoryArr);

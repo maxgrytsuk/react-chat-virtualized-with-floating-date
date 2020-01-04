@@ -6,7 +6,7 @@ import './ChatFrame.scss';
 import {initialChatHistory} from './initialChatHistory';
 import {MessageDirection} from './Chat/chat.enum';
 
-export const MESSAGES_PER_PAGE = 30;
+export const MESSAGES_PER_PAGE = 10;
 
 class ChatFrame extends PureComponent {
 
@@ -55,8 +55,13 @@ class ChatFrame extends PureComponent {
             <header className="chat-frame__header">
                 Header
             </header>
-            <Chat chatHistory={this.state.chatHistory} newMessages={this.state.newMessages}
-                  draftMessage={this.state.draftMessage} onLoadMore={this.onLoadMore}/>
+            <Chat chatHistory={this.state.chatHistory}
+                  newMessages={this.state.newMessages}
+                  draftMessage={this.state.draftMessage}
+                  idLookupFunction={(chatHistory, index) => (
+                      chatHistory.getIn([index, 'id'])
+                  )}
+                  onLoadMore={this.onLoadMore}/>
             <MessageInput onSendMessage={this.onSendMessage} onChangeMessage={this.onMessageChange}/>
         </Div100vh>
     );
