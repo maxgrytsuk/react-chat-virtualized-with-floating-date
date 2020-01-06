@@ -123,9 +123,6 @@ class Chat extends PureComponent {
         rows.filter(item => item.row.type === RowType.DATE).forEach(item => {
             const isVisible =
                 item.row.index === 0 ? false : item.rect.top > this.state.floatingDateMaxOffsetFromWindowTop;
-            /** Need to change date rows visibility directly,
-             *  otherwise fast scrolling leads to delays in making rows visible
-             */
             item.ref.className = isVisible ? 'chat__row' : 'chat__row chat__row--hidden';
         });
     };
