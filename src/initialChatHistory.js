@@ -79,11 +79,11 @@ const SENTENCES = [
     'Phasellus blandit arcu non diam varius ornare.',
 ];
 
-const MESSAGES_COUNT = 100;
+const MESSAGES_COUNT = 10000;
 const now = Date.now();
 const day = 24 * 60 * 60 * 1000;
 
-export const initialChatHistory = [];
+const chatHistory = [];
 
 const getRandomNumber = (i) => Math.floor(Math.random() * i);
 
@@ -95,10 +95,16 @@ for (let i = 0; i < MESSAGES_COUNT; i++) {
         texts.push(SENTENCES[getRandomNumber(SENTENCES.length)]);
     }
 
-    initialChatHistory.push({
+    chatHistory.push({
         text: texts.join(' '),
         direction: Math.random() > 0.5 ? MessageDirection.IN : MessageDirection.OUT,
-        timestamp: now - getRandomNumber(MESSAGES_COUNT/10) * day,
-
+        timestamp: now - getRandomNumber(MESSAGES_COUNT / 10) * day + i,
     });
 }
+
+export const initialChatHistory = chatHistory
+    .sort((a, b) => b.timestamp - a.timestamp)
+    .map((item, i) => {
+        item.id = i;
+        return item;
+    });

@@ -1,6 +1,6 @@
-import { chatSettings } from './chat.settings';
-import { MessageSectionDate, RowType } from './chat.enum';
-import { format, isThisYear, isToday, isYesterday } from 'date-fns';
+import {chatSettings} from './chat.settings';
+import {MessageSectionDate, RowType} from './chat.enum';
+import {format, isThisYear, isToday, isYesterday} from 'date-fns';
 
 /** Convert messages to rows array */
 export const getRows = (messages, startIndex = 0, dates = []) => {
@@ -52,7 +52,7 @@ export const getFloatingDate = (rows, floatingDateMaxOffsetFromWindowTop) => {
         dateRows.forEach(item => {
             const shouldSetFloatingDate = !floatingDate || (floatingDate && floatingDate.top < item.rect.top);
             if (shouldSetFloatingDate) {
-                floatingDate = { value: item.ref.textContent, top: item.rect.top };
+                floatingDate = {value: item.ref.textContent, top: item.rect.top};
             }
         });
     } else {
@@ -60,7 +60,7 @@ export const getFloatingDate = (rows, floatingDateMaxOffsetFromWindowTop) => {
         if (firstRow) {
             const content = firstRow.row.content;
             const value = getMessagesSectionDate(content.timestamp);
-            floatingDate = { value, top: firstRow.rect.top };
+            floatingDate = {value, top: firstRow.rect.top};
         }
     }
     return floatingDate;
@@ -78,9 +78,32 @@ export const getFloatingDatePosition = (rows, floatingDateMaxOffsetFromWindowTop
 
     return dateRowNearFloatingDate
         ? dateRowNearFloatingDate.rect.top -
-              chatSettings.FLOATING_DATE_ROW_DATE_OFFSET -
-              (floatingDateMaxOffsetFromWindowTop - chatSettings.FLOATING_DATE_MAX_OFFSET_FROM_TOP_BAR)
+        chatSettings.FLOATING_DATE_ROW_DATE_OFFSET -
+        (floatingDateMaxOffsetFromWindowTop - chatSettings.FLOATING_DATE_MAX_OFFSET_FROM_TOP_BAR)
         : chatSettings.FLOATING_DATE_MAX_OFFSET_FROM_TOP_BAR;
+};
+
+export const getNewRowsWithDateFromPrevChunk = ({dateRow, newRows}) => {
+    let prevDate;
+    return newRows.reduce((acc, r) => {
+        if (r.type === RowType.MESSAGE) {
+            const date = getMessagesSectionDate(r.content.timestamp);
+            if (prevDate !== date && date === dateRow.content) {
+                acc.push({...dateRow, index: acc.length});
+            }
+            prevDate = date;
+        }
+        r.index = acc.length;
+        acc.push(r);
+        return acc;
+    }, []);
+};
+
+const getMessagesSectionDate = (timestamp) => {
+    if (isToday(timestamp)) return MessageSectionDate.TODAY;
+    if (isYesterday(timestamp)) return MessageSectionDate.YESTERDAY;
+    if (isThisYear(timestamp)) return format(timestamp, MessageSectionDate.WITHOUT_YEAR);
+    return format(timestamp, MessageSectionDate.WITH_YEAR);
 };
 
 const getFirstRenderedRow = (renderedRows) => {
@@ -90,11 +113,4 @@ const getFirstRenderedRow = (renderedRows) => {
         /** Filter those dates that are visible */
         .filter(item => item.rect.height && item.rect.top < 0);
     return v[0];
-};
-
-const getMessagesSectionDate = (timestamp) => {
-    if (isToday(timestamp)) return MessageSectionDate.TODAY;
-    if (isYesterday(timestamp)) return MessageSectionDate.YESTERDAY;
-    if (isThisYear(timestamp)) return format(timestamp, MessageSectionDate.WITHOUT_YEAR);
-    return format(timestamp, MessageSectionDate.WITH_YEAR);
 };

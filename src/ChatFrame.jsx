@@ -6,31 +6,48 @@ import './ChatFrame.scss';
 import {initialChatHistory} from './initialChatHistory';
 import {MessageDirection} from './Chat/chat.enum';
 
+export const MESSAGES_PER_PAGE = 50;
+
 class ChatFrame extends PureComponent {
 
     state = {
-        chatHistory: initialChatHistory,
-        message: ''
+        chatHistory: initialChatHistory.slice(0, MESSAGES_PER_PAGE),
+        newMessages: {
+            items: [],
+            page: 0
+        },
+        page: 0,
+        draftMessage: ''
     };
 
     componentDidUpdate(prevProps, prevState, snapshot) {
-        if (prevState.count !== this.state.count) {
-            this.setState({chatHistory: initialChatHistory});
+        if (prevState.page !== this.state.page) {
+            const start = this.state.page * MESSAGES_PER_PAGE;
+            const items = initialChatHistory.slice(start, start + MESSAGES_PER_PAGE);
+            this.setState({newMessages: {items, page: this.state.page}});
         }
     }
 
     onSendMessage = (message) => {
         this.setState({
-            chatHistory: [...this.state.chatHistory, {
-                text: message,
-                direction: MessageDirection.OUT,
-                timestamp: Date.now()
-            }]
-        })
+            newMessages: {
+                items: [{
+                    text: message,
+                    direction: MessageDirection.OUT,
+                    timestamp: Date.now()
+                }],
+                page: undefined
+            }
+        });
     };
 
-    onMessageChange = (message) => {
-        this.setState({message});
+    onMessageChange = (draftMessage) => {
+        this.setState({draftMessage});
+    };
+
+    onLoadMore = (page) => {
+        page = page + 1;
+        this.setState({page});
     };
 
     render = () => (
@@ -38,11 +55,11 @@ class ChatFrame extends PureComponent {
             <header className="chat-frame__header">
                 Header
             </header>
-            <Chat messages={this.state.chatHistory} message={this.state.message}/>
+            <Chat chatHistory={this.state.chatHistory} newMessages={this.state.newMessages}
+                  draftMessage={this.state.draftMessage} onLoadMore={this.onLoadMore}/>
             <MessageInput onSendMessage={this.onSendMessage} onChangeMessage={this.onMessageChange}/>
         </Div100vh>
-    )
-    ;
+    );
 }
 
 export default ChatFrame;
